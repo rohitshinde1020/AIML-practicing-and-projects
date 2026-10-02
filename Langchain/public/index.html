@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DocuMind AI - Gemini & Pinecone RAG Studio</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Highlight.js CSS for Dark Code Syntax -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/tokyo-night-dark.min.css">
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="dark-theme">
+    <!-- Animated background aura -->
+    <div class="bg-mesh">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <div class="app-layout">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="brand-icon">
+                    <i class="fa-solid fa-brain"></i>
+                </div>
+                <div class="brand-text">
+                    <h2>DocuMind <span class="badge-ai">RAG</span></h2>
+                    <p>Gemini + Pinecone Studio</p>
+                </div>
+            </div>
+
+            <nav class="nav-menu">
+                <button class="nav-btn active" data-tab="tab-chat" id="nav-chat-btn">
+                    <i class="fa-solid fa-comments"></i>
+                    <span>AI Q&A Studio</span>
+                    <span class="nav-badge">query.js</span>
+                </button>
+
+                <button class="nav-btn" data-tab="tab-index" id="nav-index-btn">
+                    <i class="fa-solid fa-file-pdf"></i>
+                    <span>Knowledge Indexer</span>
+                    <span class="nav-badge">index.js</span>
+                </button>
+
+                <button class="nav-btn" data-tab="tab-stats" id="nav-stats-btn">
+                    <i class="fa-solid fa-database"></i>
+                    <span>Vector Storage</span>
+                </button>
+            </nav>
+
+            <div class="sidebar-status-card">
+                <div class="status-header">
+                    <span class="pulse-dot active" id="pinecone-pulse"></span>
+                    <span class="status-title" id="status-title-text">Pinecone Connected</span>
+                </div>
+                <div class="status-details">
+                    <div class="status-row">
+                        <span>Index:</span>
+                        <strong id="sidebar-index-name">new-langchain-index</strong>
+                    </div>
+                    <div class="status-row">
+                        <span>Embeddings:</span>
+                        <strong class="text-cyan">gemini-embedding-001</strong>
+                    </div>
+                    <div class="status-row">
+                        <span>Dimensions:</span>
+                        <strong id="sidebar-dim">768-d</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-footer">
+                <p>LangChain RAG Engine v1.0</p>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Top Header Bar -->
+            <header class="top-header">
+                <div class="header-left">
+                    <h1 id="page-title">AI Query & Chat Studio</h1>
+                    <p id="page-subtitle" class="subtitle">Ask questions based on your indexed DSA PDF notes with RAG context.</p>
+                </div>
+
+                <div class="header-right">
+                    <button class="btn btn-outline" id="btn-refresh-status" title="Refresh System Status">
+                        <i class="fa-solid fa-rotate"></i> Sync Index
+                    </button>
+                    <button class="btn btn-primary" id="btn-quick-index-modal">
+                        <i class="fa-solid fa-upload"></i> Index DSA.pdf
+                    </button>
+                </div>
+            </header>
+
+            <!-- TAB 1: CHAT & QUERY STUDIO (query.js interface) -->
+            <section class="tab-content active" id="tab-chat">
+                <div class="chat-workspace">
+                    <!-- Chat Container -->
+                    <div class="chat-main-card">
+                        <!-- Preset Prompt Suggestions -->
+                        <div class="preset-prompts-bar">
+                            <span class="preset-label"><i class="fa-solid fa-bolt"></i> Sample Queries:</span>
+                            <div class="prompt-chips">
+                                <button class="chip-btn" data-query="How is a tree represented using an array in a heap?">
+                                    <i class="fa-solid fa-diagram-project"></i> Tree Array Representation in Heap
+                                </button>
+                                <button class="chip-btn" data-query="What is the difference between Min-Heap and Max-Heap?">
+                                    <i class="fa-solid fa-sort-amount-down"></i> Min-Heap vs Max-Heap
+                                </button>
+                                <button class="chip-btn" data-query="Explain binary search tree insertion algorithm with complexity">
+                                    <i class="fa-solid fa-code-branch"></i> Binary Search Tree Insertion
+                                </button>
+                                <button class="chip-btn" data-query="What are graph traversal algorithms BFS and DFS?">
+                                    <i class="fa-solid fa-network-wired"></i> BFS & DFS Traversal
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Chat Messages List -->
+                        <div class="chat-messages" id="chat-messages">
+                            <!-- System Welcome Message -->
+                            <div class="message-item message-system">
+                                <div class="message-avatar">
+                                    <i class="fa-solid fa-robot"></i>
+                                </div>
+                                <div class="message-content">
+                                    <div class="message-header">
+                                        <span class="author">DocuMind RAG Assistant</span>
+                                        <span class="time">Ready</span>
+                                    </div>
+                                    <div class="message-text">
+                                        Hello! I am your AI DSA Tutor connected to your <strong>Pinecone Vector Database</strong>. Ask me any question from your indexed notes, and I'll retrieve exact source passages to answer accurately.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Input Bar -->
+                        <div class="chat-input-wrapper">
+                            <form id="chat-form" class="chat-form">
+                                <div class="input-container">
+                                    <textarea id="chat-input" placeholder="Ask a question from your indexed PDF (e.g. How is a tree represented using an array in a heap?)..." rows="1"></textarea>
+                                    
+                                    <div class="input-actions">
+                                        <div class="topk-selector" title="Number of retrieved context chunks from Pinecone">
+                                            <i class="fa-solid fa-layer-group"></i>
+                                            <span>Top Chunks:</span>
+                                            <select id="select-topk">
+                                                <option value="3">3</option>
+                                                <option value="4" selected>4</option>
+                                                <option value="6">6</option>
+                                                <option value="8">8</option>
+                                            </select>
+                                        </div>
+                                        
+                                        <button type="submit" class="btn-send" id="btn-send-chat" title="Send Question">
+                                            <i class="fa-solid fa-paper-plane"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Right Inspector Drawer (Source Chunks & Context) -->
+                    <div class="chat-inspector-card">
+                        <div class="inspector-header">
+                            <h3><i class="fa-solid fa-link"></i> RAG Context Inspector</h3>
+                            <span class="badge-pill" id="inspector-chunk-count">0 Chunks</span>
+                        </div>
+                        <p class="inspector-desc">Passages retrieved from Pinecone index used by Gemini for response.</p>
+                        
+                        <div class="inspector-content" id="inspector-sources-list">
+                            <div class="empty-inspector">
+                                <i class="fa-solid fa-folder-open"></i>
+                                <p>Submit a query to inspect vector matching passages & metadata here.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 2: INDEXER STUDIO (index.js interface) -->
+            <section class="tab-content" id="tab-index">
+                <div class="indexer-grid">
+                    <!-- PDF Upload & Settings Card -->
+                    <div class="card indexer-upload-card">
+                        <div class="card-header">
+                            <h2><i class="fa-solid fa-cloud-arrow-up"></i> Document Indexing Engine</h2>
+                            <p>Upload a new PDF or index the existing <code>dsa.pdf</code> document into Pinecone.</p>
+                        </div>
+
+                        <form id="indexing-form">
+                            <!-- Dropzone -->
+                            <div class="dropzone" id="pdf-dropzone">
+                                <input type="file" id="pdf-file-input" accept=".pdf" class="file-input-hidden">
+                                <div class="dropzone-content">
+                                    <div class="dropzone-icon">
+                                        <i class="fa-solid fa-file-pdf"></i>
+                                    </div>
+                                    <h3>Drag & Drop PDF document here</h3>
+                                    <p>or <span class="text-cyan text-bold">browse your computer</span></p>
+                                    <div class="file-preview-pill hidden" id="file-preview-pill">
+                                        <i class="fa-solid fa-file-lines"></i>
+                                        <span id="file-name-text">selected.pdf</span>
+                                        <button type="button" id="btn-remove-file"><i class="fa-solid fa-xmark"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="divider-with-text">
+                                <span>OR USE WORKSPACE PDF</span>
+                            </div>
+
+                            <div class="workspace-pdf-selector">
+                                <button type="button" class="btn btn-outline btn-full" id="btn-use-dsapdf">
+                                    <i class="fa-solid fa-book-bookmark"></i> Use Default Workspace File: <code>./dsa.pdf</code>
+                                </button>
+                            </div>
+
+                            <!-- Advanced Indexing Parameters -->
+                            <div class="config-accordion">
+                                <div class="config-title">
+                                    <span><i class="fa-solid fa-sliders"></i> Text Splitter & Embedding Parameters</span>
+                                </div>
+                                <div class="config-inputs">
+                                    <div class="form-group">
+                                        <label for="chunk-size">Chunk Size (chars):</label>
+                                        <input type="number" id="chunk-size" value="2500" min="500" max="5000" step="100">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="chunk-overlap">Chunk Overlap (chars):</label>
+                                        <input type="number" id="chunk-overlap" value="250" min="50" max="1000" step="50">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary btn-full btn-lg" id="btn-start-indexing">
+                                <i class="fa-solid fa-gears"></i> Start Vector Indexing Job
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Indexing Live Progress & Terminal Output -->
+                    <div class="card indexer-progress-card">
+                        <div class="card-header">
+                            <h2><i class="fa-solid fa-terminal"></i> Indexing Execution Log</h2>
+                            <span class="badge-status" id="indexing-status-badge">Idle</span>
+                        </div>
+
+                        <!-- Stepper Progress Tracker -->
+                        <div class="stepper-bar">
+                            <div class="step-item" id="step-1">
+                                <div class="step-circle">1</div>
+                                <span class="step-label">Load PDF</span>
+                            </div>
+                            <div class="step-line"></div>
+                            <div class="step-item" id="step-2">
+                                <div class="step-circle">2</div>
+                                <span class="step-label">Chunk Text</span>
+                            </div>
+                            <div class="step-line"></div>
+                            <div class="step-item" id="step-3">
+                                <div class="step-circle">3</div>
+                                <span class="step-label">Embed (Gemini)</span>
+                            </div>
+                            <div class="step-line"></div>
+                            <div class="step-item" id="step-4">
+                                <div class="step-circle">4</div>
+                                <span class="step-label">Pinecone Store</span>
+                            </div>
+                        </div>
+
+                        <!-- Progress Bar -->
+                        <div class="progress-bar-wrapper">
+                            <div class="progress-info">
+                                <span id="progress-message">Ready to process document...</span>
+                                <strong id="progress-percent">0%</strong>
+                            </div>
+                            <div class="progress-track">
+                                <div class="progress-fill" id="progress-fill"></div>
+                            </div>
+                        </div>
+
+                        <!-- Terminal Log Console -->
+                        <div class="terminal-box" id="terminal-log">
+                            <div class="terminal-line text-muted">[System] Standing by for document indexing...</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 3: VECTOR STORAGE STATS -->
+            <section class="tab-content" id="tab-stats">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon icon-purple"><i class="fa-solid fa-database"></i></div>
+                        <div class="stat-data">
+                            <span class="stat-label">Pinecone Index Name</span>
+                            <h3 id="stat-index-name">new-langchain-index</h3>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon icon-cyan"><i class="fa-solid fa-vector-square"></i></div>
+                        <div class="stat-data">
+                            <span class="stat-label">Vector Dimension</span>
+                            <h3 id="stat-dimension">768</h3>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon icon-green"><i class="fa-solid fa-layer-group"></i></div>
+                        <div class="stat-data">
+                            <span class="stat-label">Total Indexed Chunks</span>
+                            <h3 id="stat-vector-count">--</h3>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon icon-amber"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+                        <div class="stat-data">
+                            <span class="stat-label">Embedding Engine</span>
+                            <h3>gemini-embedding-001</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card margin-top-lg">
+                    <div class="card-header">
+                        <h2><i class="fa-solid fa-folder-tree"></i> Available Documents in Workspace</h2>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table" id="docs-table">
+                            <thead>
+                                <tr>
+                                    <th>Document Name</th>
+                                    <th>Path</th>
+                                    <th>File Size</th>
+                                    <th>Last Modified</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="docs-table-body">
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">Loading documents list...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- External Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.2/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+    
+    <!-- Application Logic -->
+    <script src="app.js"></script>
+</body>
+</html>
